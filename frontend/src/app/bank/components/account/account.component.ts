@@ -8,36 +8,51 @@ import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms'
     styleUrls: ['./account.component.scss']
 })
 export class AccountComponent implements OnInit {
-    onSubmit() {
-        throw new Error('Method not implemented.');
+    accountForm!: FormGroup;
+    account?: AccountTS | undefined;
+    accountError: string = '';
+    accountSuccess: string = '';
+  
+    constructor(private fb: FormBuilder) {
+      
     }
-    accountForm !: FormGroup;
-    account: AccountTS | undefined;
-
-    constructor(private fb: FormBuilder) { }
-
+  
     ngOnInit(): void {
-        this.accountForm = this.fb.group({
-            account_id: [null, [Validators.required, this.validateAccountId]],
-            customer_id: [null, Validators.required],
-            balance: [null, [Validators.required, this.validateNonNegativeAmount]],
-        });
-        this.account = new AccountTS("1", 1000.00, "1");
+      this.accountForm = this.fb.group({
+        accountId: ['', [Validators.required,Validators.min(1)]],
+        customerId: ['', Validators.required],
+        balance: ['', [Validators.required, Validators.min(0)]]
+      });
+    }
+    get f(){
+      return this.accountForm.controls
+    }
+    onSubmit(): void {
+        if (this.accountForm.invalid) {
+          this.accountError = 'Please correct the errors in the form.';
+          this.accountSuccess = '';
+          this.accountForm.markAllAsTouched()
+          return;
+        }
+      
+        // Simulate success (replace with actual logic later)
+        this.accountSuccess = 'Account created successfully!';
+        this.accountError = '';
+        console.log('Form Submitted:',this.accountForm.value);
+        
+      }
+      
+  
+    //   this.accountService.createAccount(this.accountForm.value).subscribe({
+    //     next: (response) => {
+    //       this.accountSuccess = 'Account created successfully!';
+    //       this.accountError = '';
+    //     },
+    //     error: (error) => {
+    //       this.accountError = error.error.message || 'An error occurred while creating the account.';
+    //       this.accountSuccess = '';
+    //     }
+    //   });
+    }
 
-    }
-    validateAccountId(control: FormControl) {
-        const accountId = control.value;
-        return accountId === null ? { accountIdRequired: true } : null;
-    }
-
-    validateNonNegativeAmount(control: FormControl) {
-        const amount = control.value;
-        return amount < 0 ? { nonNegativeAmount: true } : null;
-    }
-
-    validateCustomerName(control: FormControl) {
-        const customerName = control.value;
-        const specialCharacterPattern = /[!@#$%^&*(),.?":{}|<>]/;
-        return specialCharacterPattern.test(customerName) ? { containsSpecialCharacters: true } : null;
-    }
-}
+  

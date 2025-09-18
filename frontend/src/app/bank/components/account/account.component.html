@@ -1,11 +1,32 @@
-<div>
-    <form [formGroup]="accountForm" (ngSubmit)="onSubmit()">
-        <label for="customer_id">Customer ID:</label>
-        <input type="text" id="customer_id" formControlName="customer_id" />
+<form [formGroup]="accountForm" (ngSubmit)="onSubmit()">
+  <div>
+    <label for="accountId">Account ID</label>
+    <input id="accountId" formControlName="accountId" type="number" />
+    <div *ngIf="f['accountId']?.invalid && f['accountId']?.touched">
+      <small *ngIf="f['accountId']?.errors?.['required']">Account ID is required.</small>
+      <small *ngIf="f['accountId']?.errors?.['min']">Account ID must be greater than 0.</small>
+    </div>
+  </div>
 
-        <label for="balance">Balance:</label>
-        <input type="text" id="balance" formControlName="balance" />
+  <div>
+    <label for="customerId">Customer ID</label>
+    <input id="customerId" formControlName="customerId" type="text" />
+    <div *ngIf="f['customerId']?.invalid && f['customerId']?.touched">
+      <small>Customer ID is required.</small>
+    </div>
+  </div>
 
-        <button type="submit">Submit</button>
-    </form>
-</div>
+  <div>
+    <label for="balance">Balance</label>
+    <input id="balance" formControlName="balance" type="number" />
+    <div *ngIf="f['balance']?.invalid && f['balance']?.touched">
+      <small *ngIf="f['balance']?.errors?.['required']">Balance is required.</small>
+      <small *ngIf="f['balance']?.errors?.['min']">Balance cannot be negative.</small>
+    </div>
+  </div>
+
+  <button type="submit" [disabled]="accountForm.invalid">Submit</button>
+
+  <div *ngIf="accountSuccess">{{ accountSuccess }}</div>
+  <div *ngIf="accountError">{{ accountError }}</div>
+</form>
