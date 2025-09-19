@@ -1,58 +1,77 @@
 import { Component, OnInit } from '@angular/core';
-import { AccountTS } from '../../types/tstypes/Accountts';
-import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { BankService } from '../../services/bank.service';
+import { Observable, of } from 'rxjs';
+import { Account } from '../../types/Account';
+import { Customer } from '../../types/Customer';
 
 @Component({
-    selector: 'app-accounts',
-    templateUrl: './account.component.html',
-    styleUrls: ['./account.component.scss']
+  selector: 'app-account',
+  templateUrl: './account.component.html',
+  styleUrls: ['./account.component.scss']
 })
 export class AccountComponent implements OnInit {
-    accountForm!: FormGroup;
-    account?: AccountTS | undefined;
-    accountError: string = '';
-    accountSuccess: string = '';
-  
-    constructor(private fb: FormBuilder) {
-      
-    }
-  
-    ngOnInit(): void {
-      this.accountForm = this.fb.group({
-        accountId: ['', [Validators.required,Validators.min(1)]],
-        customerId: ['', Validators.required],
-        balance: ['', [Validators.required, Validators.min(0)]]
-      });
-    }
-    get f(){
-      return this.accountForm.controls
-    }
-    onSubmit(): void {
-        if (this.accountForm.invalid) {
-          this.accountError = 'Please correct the errors in the form.';
-          this.accountSuccess = '';
-          this.accountForm.markAllAsTouched()
-          return;
-        }
-      
-        // Simulate success (replace with actual logic later)
-        this.accountSuccess = 'Account created successfully!';
-        this.accountError = '';
-        console.log('Form Submitted:',this.accountForm.value);
-        
-      }
-      
-  
-    //   this.accountService.createAccount(this.accountForm.value).subscribe({
-    //     next: (response) => {
-    //       this.accountSuccess = 'Account created successfully!';
-    //       this.accountError = '';
-    //     },
-    //     error: (error) => {
-    //       this.accountError = error.error.message || 'An error occurred while creating the account.';
-    //       this.accountSuccess = '';
-    //     }
-    //   });
-    }
+  customers$: Observable<Customer[]>;
+  customers: Customer[] = [];
+  accountForm: FormGroup;
+  accounts$: Observable<Account[]>;
+  accountError$: Observable<string>;
+  accountSuccess$: Observable<string>;
+  isFormSubmitted: boolean = false;
+  bankService: BankService;
+  role: string | null;
+  userId: string | null;
+  errorMessage = '';
+  successMessage = '';
+  constructor(
+    private formBuilder: FormBuilder,
+    private banksService: BankService
+  ) {
+    // this.customers$ = this.banksService.getAllCustomers();
+    // this.customers$.subscribe(data => {
+    //   this.customers = data;
+    // });
 
-  
+  }
+
+  ngOnInit(): void {
+    this.loadCustomers();
+    this.accountForm = this.formBuilder.group({
+      customer: [null, Validators.required], // ✅ Use null instead of empty string
+      balance: ["", [Validators.required, Validators.min(0)]]
+    });
+  }
+
+  loadCustomers(): void {
+    this.banksService.getAllCustomers().subscribe({
+      next: (response) => {
+        this.customers = response;
+      },
+      error: (error) => console.log('Error in loading customers')
+    })
+  }
+
+  onSubmit() {
+    this.isFormSubmitted = true;
+    this.accountSuccess$ = of('');
+    this.accountError$ = of('');
+    if (this.accountForm.invalid) {
+      this.errorMessage = 'Please fill out all required fields correctly.';
+      return;
+    } else {
+      const formData = this.accountForm.value;
+      console.log(formData);
+      const account = new Account(formData);
+      this.banksService.addAccount(account).subscribe(
+        (res: any) => {
+          this.accountSuccess$ = of("Account created successfully");
+          this.successMessage = "Account created successfully";
+        },
+        (error) => {
+          this.accountError$ = of("Unable to create account");
+          this.errorMessage = "Unable to create account";
+        }
+      );
+    }
+  }
+}

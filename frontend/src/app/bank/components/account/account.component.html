@@ -1,32 +1,38 @@
-<form [formGroup]="accountForm" (ngSubmit)="onSubmit()">
-  <div>
-    <label for="accountId">Account ID</label>
-    <input id="accountId" formControlName="accountId" type="number" />
-    <div *ngIf="f['accountId']?.invalid && f['accountId']?.touched">
-      <small *ngIf="f['accountId']?.errors?.['required']">Account ID is required.</small>
-      <small *ngIf="f['accountId']?.errors?.['min']">Account ID must be greater than 0.</small>
+<app-navbar></app-navbar>
+<form (ngSubmit)="onSubmit()" [formGroup]="accountForm" class="user-form">
+    <div class="form-group">
+        <label for="customer">Customer:</label>
+        <select formControlName="customer">
+            <option [ngValue]="null">Select a Customer</option>
+            <option *ngFor="let customer of customers$ | async" [ngValue]="customer">
+                {{ customer.name }}
+            </option>
+        </select>
     </div>
-  </div>
 
-  <div>
-    <label for="customerId">Customer ID</label>
-    <input id="customerId" formControlName="customerId" type="text" />
-    <div *ngIf="f['customerId']?.invalid && f['customerId']?.touched">
-      <small>Customer ID is required.</small>
+    <div class="form-group">
+        <label for="balance">Balance:</label>
+        <input type="text" id="balance" formControlName="balance" class="form-control" />
     </div>
-  </div>
 
-  <div>
-    <label for="balance">Balance</label>
-    <input id="balance" formControlName="balance" type="number" />
-    <div *ngIf="f['balance']?.invalid && f['balance']?.touched">
-      <small *ngIf="f['balance']?.errors?.['required']">Balance is required.</small>
-      <small *ngIf="f['balance']?.errors?.['min']">Balance cannot be negative.</small>
+    <div *ngIf="accountForm.controls['customer'].invalid && isFormSubmitted" class="error">
+        Customer is required.
     </div>
-  </div>
+    <div *ngIf="accountForm.controls['balance'].invalid && isFormSubmitted" class="error">
+        Balance is required and must be a number.
+    </div>
 
-  <button type="submit" [disabled]="accountForm.invalid">Submit</button>
 
-  <div *ngIf="accountSuccess">{{ accountSuccess }}</div>
-  <div *ngIf="accountError">{{ accountError }}</div>
+    <button type="submit" class="btn-submit">Create Account</button>
+
+    <ng-container>
+        <div *ngIf="accountError$ | async as error" class="error">
+            {{ error }}
+        </div>
+        <div *ngIf="accountSuccess$ | async as msg" class="success">
+            {{ msg }}
+        </div>
+    </ng-container>
+
+    <a routerLink="/bank" class="task-list" class="task-list">Dashboard</a>
 </form>

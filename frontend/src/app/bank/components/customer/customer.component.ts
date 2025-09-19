@@ -1,64 +1,88 @@
 import { Component, OnInit } from '@angular/core';
-// import { Customer } from '../../types/Customer'; 
-import { CustomerTS } from '../../types/tstypes/Customerts';
-import { AbstractControl, FormBuilder, FormGroup, FormsModule, ValidationErrors, Validators } from '@angular/forms';
-import { of } from 'rxjs';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Observable, of } from 'rxjs';
+import { Customer } from '../../types/Customer';
+import { BankService } from '../../services/bank.service';
 
 @Component({
-  selector: 'app-customers',
+  selector: 'app-customer',
   templateUrl: './customer.component.html',
-  styleUrls: ['./customer.component.scss'],
+  styleUrls: ['./customer.component.scss']
 })
 export class CustomersComponent implements OnInit {
-  isFormSubmitted: boolean = false;
-  customerSuccess: string = '';
-  customerError: string = '';
-  customerForm!: FormGroup;
-  customers: CustomerTS[] = [];
 
-  constructor(private formBuilder: FormBuilder) {}
+  customerForm !: FormGroup;
+  customerError$: Observable<string>;
+  customerSuccess$: Observable<string>;
+  isFormSubmitted: boolean = false;
+  customerError: string = '';
+  customerSuccess: string = '';
+  customer: Customer | null = null;
+
+  constructor(
+    private formBuilder: FormBuilder,
+    private banksService: BankService
+  ) { }
 
   ngOnInit(): void {
     this.customerForm = this.formBuilder.group({
-      name: ['', [Validators.required, this.noSpecialCharacters]],
-      email: ['', [Validators.required, Validators.email]],
-      username: ['', [Validators.required, Validators.minLength(4)]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
+      name: ["", [Validators.required]],
+      email: ["", [Validators.required]],
+      username: ["", [Validators.required, this.noSpecialCharacters]],
+      password: ["", [Validators.required, Validators.minLength(8)]],
+      role: ["", [Validators.required]]
     });
   }
-
-  private noSpecialCharacters(control: AbstractControl): ValidationErrors | null {
-    const regex = /^[a-zA-Z0-9 ]*$/;
-    if (control.value && !regex.test(control.value)) {
-      return { specialCharacters: true };
+  private noSpecialCharacters(control: any): {[key:string]: boolean} | null{
+    const specialCharactersRegex = /[!@#$%^&*()_+{}\[\]:;<>,.?~\\/-]/;
+    if(specialCharactersRegex.test(control.value)){
+      return {specialCharacters : true}
     }
-    return null;
+    return null
   }
-
-  onSubmit(): void {
+  onSubmit() {
     this.isFormSubmitted = true;
-  
+    this.customerSuccess$ = of('');
+    this.customerError$ = of('');
+    const emailRegex: RegExp = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
     if (this.customerForm.invalid) {
-      this.customerError = 'Please correct the errors in the form.';
-      this.customerSuccess = '';
+      this.customerError = "Please fill out all required fields correctly.";
       return;
+    } else {
+
+      const data = this.customerForm.value;
+      if (data.password.length < 8) {
+        this.customerError$ = of("Password must be of 8 characters");
+        this.customerError = "Password must be of 8 characters";
+        return;
+      }
+      if (this.noSpecialCharacters(data.username)) {
+        this.customerError$ = of("User Name must consist of letter and number only!!");
+        this.customerError = "User Name must consist of letter and number only!!";
+        return;
+      }
+      console.log(emailRegex.test(data.email));
+      if (!emailRegex.test(data.email)) {
+        this.customerError$ = of("Invalid Email Id!!");
+        this.customerError = "Invalid Email Id!!";
+        return;
+
+      }
+      // const username = name, password = "abcd1234";
+      const customer: Customer =
+        new Customer(data);
+
+      ;
+      this.banksService.addCustomer(customer).subscribe(
+        (res: any) => {
+          this.customerSuccess$ = of('Customer created successfully');
+          this.customerSuccess = "Customer created successfully";
+        },
+        (error) => {
+          this.customerError$ = of("Unable to create customer");
+          this.customerError = "Unable to create customer";
+        }
+      );
     }
-  
-    // Simulate success (replace with actual logic later)
-    this.customerSuccess = 'Customer created successfully!';
-    this.customerError = '';
   }
-  
-
-    // this.customerService.createCustomer(this.customerForm.value).subscribe({
-    //   next: (response: any) => {
-    //     this.customerSuccess = 'Customer created successfully!';
-    //     this.customerError = '';
-    //   },
-    //   error: (error: { error: { message: string; }; }) => {
-    //     this.customerError = error.error.message || 'An error occurred while creating the customer.';
-    //     this.customerSuccess = '';
-    //   }
-    // });
-  }
-
+}
