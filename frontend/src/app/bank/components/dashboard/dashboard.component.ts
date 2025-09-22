@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { BankService } from '../../services/bank.service';
 import { Customer } from '../../types/Customer';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { Account } from '../../types/Account';
 import { Transaction } from '../../types/Transaction';
 import { Router } from '@angular/router';
@@ -18,45 +18,100 @@ export class DashboardComponent implements OnInit {
 
   customers: Customer[] = [];
   accounts: Account[] = [];
+  loggedInCustomer: Customer;
 
   transactions$: Observable<Transaction[]>
   transactions: Transaction[] = [];
   role: String | null;
   userRole: string;
   userId: number;
+
   constructor(private bankService: BankService, private router: Router) { }
 
   ngOnInit(): void {
-    this.role = localStorage.getItem("role");
-    const strUserId = localStorage.getItem("user_id");
-    this.customers$ = this.bankService.getAllCustomers();
+    this.role = localStorage.getItem("role") as string;
+    const strUserId = localStorage.getItem("user_id") as string;
+
+    this.customers$ = this.bankService.getAllCustomers
+      ? this.bankService.getAllCustomers()
+      : of([]);
     this.loadAdminData();
 
-    console.log(this.customers$);
-    // this.userRole = localStorage.getItem('role');
-    if (this.role == 'USER') {
-      this.accounts$ = this.bankService.getAccountsByUser(strUserId);
 
-      this.transactions$ = this.bankService.getTransactionByUser(strUserId);
-
+    if (this.role === 'USER') {
+      this.loadUserData(strUserId);
     } else {
-      this.accounts$ = this.bankService.getAllAccounts();
-      console.log(this.accounts$);
-      this.transactions$ = this.bankService.getAllTranactions();
+      this.accounts$ = this.bankService.getAllAccounts
+        ? this.bankService.getAllAccounts()
+        : of([]);
+      this.transactions$ = this.bankService.getAllTranactions
+        ? this.bankService.getAllTranactions()
+        : of([]);
 
+      this.accounts$.subscribe(data => this.accounts = data);
+      this.transactions$.subscribe(data => this.transactions = data);
     }
+
   }
 
-  loadAdminData(): void {
-    this.customers$ = this.bankService.getAllCustomers();
-    this.accounts$ = this.bankService.getAllAccounts();
-    this.transactions$ = this.bankService.getAllTranactions();
 
-    // ✅ Subscribe to populate arrays for test access
+
+  // loadAdminData(): void {
+  //   this.customers$ = this.bankService.getAllCustomers();
+  //   this.accounts$ = this.bankService.getAllAccounts();
+  //   this.transactions$ = this.bankService.getAllTranactions();
+
+  //   // ✅ Subscribe to populate arrays for test access
+  //   this.customers$.subscribe(data => this.customers = data);
+  //   this.accounts$.subscribe(data => this.accounts = data);
+  //   this.transactions$.subscribe(data => this.transactions = data);
+  // }
+
+
+  loadAdminData(): void {
+    this.customers$ = this.bankService.getAllCustomers
+      ? this.bankService.getAllCustomers()
+      : of([]);
+    this.accounts$ = this.bankService.getAllAccounts
+      ? this.bankService.getAllAccounts()
+      : of([]);
+    this.transactions$ = this.bankService.getAllTranactions
+      ? this.bankService.getAllTranactions()
+      : of([]);
+
     this.customers$.subscribe(data => this.customers = data);
     this.accounts$.subscribe(data => this.accounts = data);
     this.transactions$.subscribe(data => this.transactions = data);
   }
+
+
+  // loadUserData(userId: string): void {
+  //   this.accounts$ = this.bankService.getAccountsByUser(userId);
+  //   this.transactions$ = this.bankService.getTransactionByUser(userId);
+
+  //   this.accounts$.subscribe(data => this.accounts = data);
+  //   this.transactions$.subscribe(data => this.transactions = data);
+  // }
+
+
+  loadUserData(userId: string | null): void {
+    if (!userId) {
+      this.accounts$ = of([]);
+      this.transactions$ = of([]);
+      return;
+    }
+
+    this.accounts$ = this.bankService.getAccountsByUser
+      ? this.bankService.getAccountsByUser(userId)
+      : of([]);
+    this.transactions$ = this.bankService.getTransactionByUser
+      ? this.bankService.getTransactionByUser(userId)
+      : of([]);
+
+    this.accounts$.subscribe(data => this.accounts = data);
+    this.transactions$.subscribe(data => this.transactions = data);
+  }
+
 
 
   deteteCustomer(customer: any): void {
